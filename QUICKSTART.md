@@ -138,11 +138,25 @@ npm run clean:db       # Delete database files
 
 ### Testing & Quality
 ```bash
-npm test              # Run test suite
-npm run test:watch    # Run tests in watch mode
-npm run test:coverage # Run tests with coverage report
+# Standard testing
+npm test              # Run test suite with logging
+npm run test:watch    # Run tests in watch mode with logging
+npm run test:coverage # Run tests with coverage report and logging
 npm run check         # Run linting and tests
 npm run stage:check   # Verify Stage B1 completion
+
+# Enhanced test logging
+npm run test:log                # Basic test with file logging
+npm run test:log:coverage       # Coverage tests with detailed logs
+npm run test:log:performance    # Performance analysis and slow test detection
+npm run test:log:cicd          # CI/CD friendly JSON reports
+npm run test:log:full          # All logging features enabled
+npm run test:clean             # Clean test logs and coverage files
+
+# Test logging demo
+npm run test:demo              # Interactive demo of test logging
+npm run test:demo:quick        # Quick demo
+npm run test:demo:logs         # View existing log files
 ```
 
 ### Code Quality
@@ -231,7 +245,7 @@ If you encounter issues:
 After successful setup:
 
 1. **Explore the API**: Visit `http://localhost:3000/api/v1`
-2. **Check the docs**: Read `docs/API.md` for API documentation
+2. **Check the docs**: Read `docs/API.md` for API documentation and `docs/TEST_LOGGING.md` for test logging
 3. **Review the plan**: See `docs/DEVELOPMENT_STAGE_PLAN.md` for next stages
 4. **Start coding**: Begin with Stage B2 (User Authentication)
 

@@ -220,8 +220,10 @@ npm run db:reset       # Reset database (rollback all + migrate)
 npm run clean:db       # Delete database files
 
 # Testing & quality
-npm test               # Run test suite
-npm run test:coverage  # Run tests with coverage
+npm test               # Run test suite with enhanced logging
+npm run test:coverage  # Run tests with coverage and logging
+npm run test:log:full  # Full test analysis (coverage + performance + CI/CD)
+npm run test:demo      # Interactive test logging demo
 npm run check          # Run linting and tests
 npm run stage:check    # Verify Stage B1 completion
 
@@ -313,6 +315,7 @@ pm2 start ecosystem.config.js
 
 - [Database Schema Documentation](backend/db/DataModel.md)
 - [API Documentation](docs/API.md)
+- [Test Logging System](docs/TEST_LOGGING.md)
 - [Component Library](docs/COMPONENTS.md)
 - [Deployment Guide](docs/DEPLOYMENT.md)
 

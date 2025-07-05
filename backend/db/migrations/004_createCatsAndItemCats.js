@@ -1,23 +1,17 @@
-module.exports.up = async (db) => {
-  await db.run(`
-    CREATE TABLE IF NOT EXISTS Category (
-      id   INTEGER PRIMARY KEY AUTOINCREMENT,
-      name TEXT    NOT NULL UNIQUE
-    );
-  `);
+module.exports.up = async (knex) => {
+  await knex.schema.createTable('Category', (table) => {
+    table.increments('id').primary();
+    table.text('name').notNullable().unique();
+  });
 
-  await db.run(`
-    CREATE TABLE IF NOT EXISTS ItemCategory (
-      item_id     INTEGER NOT NULL 
-                    REFERENCES FeedItem(id) ON DELETE CASCADE,
-      category_id INTEGER NOT NULL 
-                    REFERENCES Category(id) ON DELETE CASCADE,
-      PRIMARY KEY(item_id, category_id)
-    );
-  `);
+  return knex.schema.createTable('ItemCategory', (table) => {
+    table.integer('item_id').notNullable().references('id').inTable('FeedItem').onDelete('CASCADE');
+    table.integer('category_id').notNullable().references('id').inTable('Category').onDelete('CASCADE');
+    table.primary(['item_id', 'category_id']);
+  });
 };
 
-module.exports.down = async (db) => {
-  await db.run(`DROP TABLE IF EXISTS ItemCategory;`);
-  await db.run(`DROP TABLE IF EXISTS Category;`);
+module.exports.down = async (knex) => {
+  await knex.schema.dropTableIfExists('ItemCategory');
+  return knex.schema.dropTableIfExists('Category');
 };

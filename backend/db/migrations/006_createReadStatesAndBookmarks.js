@@ -1,28 +1,20 @@
-module.exports.up = async (db) => {
-  await db.run(`
-    CREATE TABLE IF NOT EXISTS ReadState (
-      user_id  INTEGER NOT NULL 
-                REFERENCES User(id) ON DELETE CASCADE,
-      item_id  INTEGER NOT NULL 
-                REFERENCES FeedItem(id) ON DELETE CASCADE,
-      read_at  TEXT    DEFAULT (datetime('now')),
-      PRIMARY KEY(user_id, item_id)
-    );
-  `);
+module.exports.up = async (knex) => {
+  await knex.schema.createTable('ReadState', (table) => {
+    table.integer('user_id').notNullable().references('id').inTable('User').onDelete('CASCADE');
+    table.integer('item_id').notNullable().references('id').inTable('FeedItem').onDelete('CASCADE');
+    table.timestamp('read_at').defaultTo(knex.fn.now());
+    table.primary(['user_id', 'item_id']);
+  });
 
-  await db.run(`
-    CREATE TABLE IF NOT EXISTS Bookmark (
-      user_id       INTEGER NOT NULL 
-                      REFERENCES User(id) ON DELETE CASCADE,
-      item_id       INTEGER NOT NULL 
-                      REFERENCES FeedItem(id) ON DELETE CASCADE,
-      bookmarked_at TEXT    DEFAULT (datetime('now')),
-      PRIMARY KEY(user_id, item_id)
-    );
-  `);
+  return knex.schema.createTable('Bookmark', (table) => {
+    table.integer('user_id').notNullable().references('id').inTable('User').onDelete('CASCADE');
+    table.integer('item_id').notNullable().references('id').inTable('FeedItem').onDelete('CASCADE');
+    table.timestamp('bookmarked_at').defaultTo(knex.fn.now());
+    table.primary(['user_id', 'item_id']);
+  });
 };
 
-module.exports.down = async (db) => {
-  await db.run(`DROP TABLE IF EXISTS Bookmark;`);
-  await db.run(`DROP TABLE IF EXISTS ReadState;`);
+module.exports.down = async (knex) => {
+  await knex.schema.dropTableIfExists('Bookmark');
+  return knex.schema.dropTableIfExists('ReadState');
 };

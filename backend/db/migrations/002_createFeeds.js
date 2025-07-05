@@ -1,18 +1,16 @@
-module.exports.up = async (db) => {
-  await db.run(`
-    CREATE TABLE IF NOT EXISTS Feed (
-      id               INTEGER PRIMARY KEY AUTOINCREMENT,
-      name             TEXT    NOT NULL,
-      url              TEXT    UNIQUE NOT NULL,
-      status           TEXT    NOT NULL DEFAULT 'active',  -- active | paused
-      fetch_interval   INTEGER NOT NULL DEFAULT 3600,      -- seconds
-      last_fetched_at  TEXT,
-      created_at       TEXT    DEFAULT (datetime('now')),
-      updated_at       TEXT    DEFAULT (datetime('now'))
-    );
-  `);
+module.exports.up = async (knex) => {
+  return knex.schema.createTable('Feed', (table) => {
+    table.increments('id').primary();
+    table.text('name').notNullable();
+    table.text('url').notNullable().unique();
+    table.text('status').notNullable().defaultTo('active'); // active | paused
+    table.integer('fetch_interval').notNullable().defaultTo(3600); // seconds
+    table.timestamp('last_fetched_at').nullable();
+    table.timestamp('created_at').defaultTo(knex.fn.now());
+    table.timestamp('updated_at').defaultTo(knex.fn.now());
+  });
 };
 
-module.exports.down = async (db) => {
-  await db.run(`DROP TABLE IF EXISTS Feed;`);
+module.exports.down = async (knex) => {
+  return knex.schema.dropTableIfExists('Feed');
 };

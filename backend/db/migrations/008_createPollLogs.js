@@ -1,16 +1,13 @@
-module.exports.up = async (db) => {
-  await db.run(`
-    CREATE TABLE IF NOT EXISTS PollLog (
-      id         INTEGER PRIMARY KEY AUTOINCREMENT,
-      feed_id    INTEGER NOT NULL 
-                    REFERENCES Feed(id) ON DELETE CASCADE,
-      run_at     TEXT    DEFAULT (datetime('now')),
-      success    INTEGER NOT NULL,
-      new_items  INTEGER NOT NULL
-    );
-  `);
+module.exports.up = async (knex) => {
+  return knex.schema.createTable('PollLog', (table) => {
+    table.increments('id').primary();
+    table.integer('feed_id').notNullable().references('id').inTable('Feed').onDelete('CASCADE');
+    table.timestamp('run_at').defaultTo(knex.fn.now());
+    table.integer('success').notNullable();
+    table.integer('new_items').notNullable();
+  });
 };
 
-module.exports.down = async (db) => {
-  await db.run(`DROP TABLE IF EXISTS PollLog;`);
+module.exports.down = async (knex) => {
+  return knex.schema.dropTableIfExists('PollLog');
 };

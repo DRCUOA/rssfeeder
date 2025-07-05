@@ -11,6 +11,46 @@ RSSFeeder solves the problem of fragmented content consumption by providing:
 - **Organization**: Tag items with labels and browse by feed, date, tag, or unread status
 - **Unified Interface**: Single "inbox" view of latest entries across all subscriptions with filtering
 
+## 🚀 Quick Start
+
+**Get your development environment running in minutes:**
+
+```bash
+# Clone the repository
+git clone https://github.com/your-org/rssfeeder.git
+cd rssfeeder
+
+# Run automated setup (cross-platform)
+npm run setup
+```
+
+**That's it!** The setup script will:
+- ✅ Install all dependencies
+- ✅ Set up the database with migrations
+- ✅ Configure environment variables
+- ✅ Run tests to verify everything works
+- ✅ Optionally start the development server
+
+### Alternative Setup Methods
+
+```bash
+# Platform-specific setup
+npm run setup:unix     # macOS/Linux
+npm run setup:windows  # Windows
+
+# Manual validation
+npm run validate       # Check setup without starting server
+```
+
+### Quick Access
+
+Once running:
+- **Backend API**: http://localhost:3000/api/v1
+- **Health Check**: http://localhost:3000/health
+- **Frontend**: http://localhost:5173 (when implemented)
+
+For detailed setup instructions, troubleshooting, and manual installation, see **[QUICKSTART.md](QUICKSTART.md)**.
+
 ## 🏗️ MVP Architecture
 
 The MVP follows a clean separation between frontend SPA and backend API, with SQLite for local persistence.
@@ -165,32 +205,37 @@ npm run dev
 ### Development Commands
 
 ```bash
-# Start backend only
-npm run dev:backend
+# Quick setup and validation
+npm run setup           # Complete automated setup
+npm run validate        # Verify setup without starting server
 
-# Start frontend only  
-npm run dev:frontend
+# Server management
+npm run dev:backend     # Start backend only
+npm run dev:frontend    # Start frontend only (when implemented)
+npm run dev            # Start both backend and frontend
 
-# Run tests
-npm test
+# Database management
+npm run migrate:dev     # Run database migrations
+npm run db:reset       # Reset database (rollback all + migrate)
+npm run clean:db       # Delete database files
 
-# Run tests with coverage
-npm run test:coverage
+# Testing & quality
+npm test               # Run test suite with enhanced logging
+npm run test:coverage  # Run tests with coverage and logging
+npm run test:log:full  # Full test analysis (coverage + performance + CI/CD)
+npm run test:demo      # Interactive test logging demo
+npm run check          # Run linting and tests
+npm run stage:check    # Verify Stage B1 completion
 
-# Lint code
-npm run lint
+# Code quality
+npm run lint           # Lint code
+npm run format         # Format code
+npm run lint:fix       # Fix linting issues
 
-# Format code
-npm run format
-
-# Run database migrations
-npm run migrate
-
-# Rollback migrations
-npm run migrate:rollback
-
-# Generate new migration
-npm run migrate:make migration_name
+# Maintenance
+npm run clean          # Clean install (remove node_modules)
+npm run reset          # Reset database and migrate
+npm run health         # Check server health
 ```
 
 ## 📁 Key Directories
@@ -270,6 +315,7 @@ pm2 start ecosystem.config.js
 
 - [Database Schema Documentation](backend/db/DataModel.md)
 - [API Documentation](docs/API.md)
+- [Test Logging System](docs/TEST_LOGGING.md)
 - [Component Library](docs/COMPONENTS.md)
 - [Deployment Guide](docs/DEPLOYMENT.md)
 

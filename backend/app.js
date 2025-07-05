@@ -115,8 +115,10 @@ app.use('/api/v1', (req, res, next) => {
   next();
 });
 
-// Placeholder for route modules (to be implemented in later stages)
-// app.use('/api/v1/auth', require('./routes/auth'));
+// Route modules
+app.use('/api/v1/auth', require('./routes/auth'));
+
+// Placeholder for additional route modules (to be implemented in later stages)
 // app.use('/api/v1/users', require('./routes/users'));
 // app.use('/api/v1/feeds', require('./routes/feeds'));
 // app.use('/api/v1/items', require('./routes/items'));

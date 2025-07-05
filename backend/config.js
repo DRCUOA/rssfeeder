@@ -26,6 +26,8 @@ const config = {
   // Security
   BCRYPT_SALT_ROUNDS: parseInt(process.env.BCRYPT_SALT_ROUNDS) || 10,
   COOKIE_SECRET: process.env.COOKIE_SECRET || 'development-cookie-secret-key-change-in-production',
+  MAX_LOGIN_ATTEMPTS: parseInt(process.env.MAX_LOGIN_ATTEMPTS) || 5,
+  ACCOUNT_LOCK_DURATION: parseInt(process.env.ACCOUNT_LOCK_DURATION) || 300000, // 5 minutes in milliseconds
 
   // Rate Limiting
   RATE_LIMIT_WINDOW: parseInt(process.env.RATE_LIMIT_WINDOW) || 15,

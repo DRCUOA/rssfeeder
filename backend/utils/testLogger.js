@@ -328,8 +328,42 @@ class TestLogger {
 // Export singleton instance
 const testLogger = new TestLogger();
 
+// Simple console logger for tests
+const logger = {
+  debug: (message, ...args) => {
+    if (process.env.NODE_ENV === 'test') {
+      // Only log in test environment if specifically requested
+      if (process.env.TEST_VERBOSE) {
+        console.log(`[TEST DEBUG] ${message}`, ...args);
+      }
+    }
+  },
+  info: (message, ...args) => {
+    if (process.env.NODE_ENV === 'test') {
+      if (process.env.TEST_VERBOSE) {
+        console.log(`[TEST INFO] ${message}`, ...args);
+      }
+    }
+  },
+  warn: (message, ...args) => {
+    if (process.env.NODE_ENV === 'test') {
+      if (process.env.TEST_VERBOSE) {
+        console.warn(`[TEST WARN] ${message}`, ...args);
+      }
+    }
+  },
+  error: (message, ...args) => {
+    if (process.env.NODE_ENV === 'test') {
+      if (process.env.TEST_VERBOSE) {
+        console.error(`[TEST ERROR] ${message}`, ...args);
+      }
+    }
+  }
+};
+
 module.exports = {
   testLogger,
+  logger,
   testResultsLogger,
   coverageLogger,
   performanceLogger,

@@ -124,13 +124,13 @@ const transaction = async (callback) => {
 // Health check
 const healthCheck = async () => {
   try {
-    const start = Date.now();
+    const start = performance.now();
     await db.raw('SELECT 1');
-    const duration = Date.now() - start;
+    const duration = Math.round(performance.now() - start);
     
     return {
       status: 'healthy',
-      responseTime: duration,
+      responseTime: Math.max(duration, 1), // Ensure at least 1ms
       timestamp: new Date().toISOString()
     };
   } catch (error) {

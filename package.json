@@ -5,9 +5,10 @@
   "main": "backend/app.js",
   "scripts": {
     "start": "node backend/app.js",
-    "dev": "concurrently \"npm run dev:backend\" \"npm run dev:frontend\"",
-    "dev:backend": "nodemon backend/app.js",
+    "dev": "node backend/app.js",
+    "dev:backend": "node backend/app.js",
     "dev:frontend": "cd frontend && npm run dev",
+    "dev:both": "echo 'Use separate terminals: npm run dev:backend and npm run dev:frontend'",
     "build": "cd frontend && npm run build",
     "build:backend": "echo 'Backend build complete'",
     "test": "jest --reporters=default --reporters=./backend/utils/jestReporter.js",
@@ -49,7 +50,11 @@
     "welcome": "node scripts/welcome.js",
     "test:demo": "node scripts/test-demo.js",
     "test:demo:quick": "node scripts/test-demo.js quick",
-    "test:demo:logs": "node scripts/test-demo.js logs"
+    "test:demo:logs": "node scripts/test-demo.js logs",
+    "phase:check": "node scripts/phase-check.js",
+    "phase:b1": "node scripts/phase-check.js -b1",
+    "phase:b2": "node scripts/phase-check.js -b2",
+    "phase:all": "node scripts/phase-check.js -b1 -b2"
   },
   "keywords": [
     "rss",
@@ -88,12 +93,10 @@
   },
   "devDependencies": {
     "@types/jest": "^29.5.8",
-    "concurrently": "^8.2.2",
     "eslint": "^8.56.0",
     "eslint-config-node": "^4.1.0",
     "eslint-plugin-jest": "^27.6.0",
     "jest": "^29.7.0",
-    "nodemon": "^3.0.2",
     "prettier": "^3.1.1",
     "supertest": "^6.3.3"
   },
@@ -103,7 +106,9 @@
   },
   "jest": {
     "testEnvironment": "node",
-    "setupFilesAfterEnv": ["<rootDir>/backend/tests/setup.js"],
+    "setupFilesAfterEnv": [
+      "<rootDir>/backend/tests/setup.js"
+    ],
     "testMatch": [
       "**/tests/**/*.test.js",
       "**/__tests__/**/*.js"

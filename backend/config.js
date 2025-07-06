@@ -1,5 +1,9 @@
 const path = require('path');
-require('dotenv').config({ path: path.join(__dirname, '..', '.env.development') });
+
+// Only load .env.development if not in test environment
+if (process.env.NODE_ENV !== 'test') {
+  require('dotenv').config({ path: path.join(__dirname, '..', '.env.development') });
+}
 
 const config = {
   // Application
@@ -37,7 +41,9 @@ const config = {
   // File Upload
   UPLOAD_DIR: process.env.UPLOAD_DIR || './uploads',
   MAX_FILE_SIZE: parseInt(process.env.MAX_FILE_SIZE) || 5242880, // 5MB
-  ALLOWED_FILE_TYPES: process.env.ALLOWED_FILE_TYPES ? process.env.ALLOWED_FILE_TYPES.split(',') : ['image/jpeg', 'image/png', 'image/webp'],
+  ALLOWED_FILE_TYPES: process.env.ALLOWED_FILE_TYPES !== undefined ? 
+    (process.env.ALLOWED_FILE_TYPES === '' ? [''] : process.env.ALLOWED_FILE_TYPES.split(',')) : 
+    ['image/jpeg', 'image/png', 'image/webp'],
 
   // Logging
   LOG_LEVEL: process.env.LOG_LEVEL || 'debug',

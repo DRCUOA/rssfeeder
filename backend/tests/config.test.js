@@ -34,6 +34,9 @@ describe('Configuration Tests', () => {
       process.env.PORT = '4000';
       process.env.NODE_ENV = 'production';
       process.env.DATABASE_URL = './production.db';
+      // Provide valid secrets for production validation
+      process.env.JWT_SECRET = 'production-jwt-secret';
+      process.env.COOKIE_SECRET = 'production-cookie-secret';
       
       // Clear module cache and re-require
       delete require.cache[require.resolve('../config')];
@@ -124,7 +127,7 @@ describe('Configuration Tests', () => {
   describe('Default Values', () => {
     test('should have correct default values for application settings', () => {
       expect(config.PORT).toBe(3000);
-      expect(config.NODE_ENV).toBe('development');
+      expect(config.NODE_ENV).toBe('test'); // Jest sets NODE_ENV=test
       expect(config.FRONTEND_URL).toBe('http://localhost:5173');
     });
 
@@ -186,6 +189,8 @@ describe('Configuration Tests', () => {
     });
 
     test('should handle empty array configuration', () => {
+      // Clear the environment variable first, then set to empty string
+      delete process.env.ALLOWED_FILE_TYPES;
       process.env.ALLOWED_FILE_TYPES = '';
       
       delete require.cache[require.resolve('../config')];
@@ -197,12 +202,15 @@ describe('Configuration Tests', () => {
 
   describe('Environment-Specific Settings', () => {
     test('should have development-specific settings', () => {
+      // Clear NODE_ENV and set to development
+      delete process.env.NODE_ENV;
       process.env.NODE_ENV = 'development';
       
       delete require.cache[require.resolve('../config')];
       const freshConfig = require('../config');
       
-      expect(freshConfig.LOG_LEVEL).toBe('debug');
+      expect(freshConfig.NODE_ENV).toBe('development');
+      expect(freshConfig.LOG_LEVEL).toBe('info'); // .env.development sets this to info
       expect(freshConfig.VERBOSE_LOGGING).toBe(false);
       expect(freshConfig.ENABLE_CORS).toBe(true);
     });

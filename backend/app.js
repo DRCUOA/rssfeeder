@@ -43,7 +43,7 @@ if (config.ENABLE_CORS) {
   app.use(cors({
     origin: config.FRONTEND_URL,
     credentials: true,
-    optionsSuccessStatus: 200
+    optionsSuccessStatus: 204
   }));
 }
 

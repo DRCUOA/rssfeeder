@@ -11,13 +11,21 @@ const { AuthenticationError, ValidationError } = require('../middlewares/errorHa
 class JWTUtils {
   /**
    * Generate access token
-   * @param {Object} payload - Token payload (usually user data)
+   * @param {Object} payload - Token payload
    * @param {string} expiresIn - Token expiration time
    * @returns {string} - JWT access token
    */
   static generateAccessToken(payload, expiresIn = config.JWT_EXPIRES_IN) {
     try {
-      const token = jwt.sign(payload, config.JWT_SECRET, {
+      // Add unique identifier and precise timestamp to ensure uniqueness
+      const uniquePayload = {
+        ...payload,
+        jti: crypto.randomUUID(), // Unique JWT ID
+        iat: Math.floor(Date.now() / 1000), // Issued at (seconds)
+        nonce: crypto.randomBytes(8).toString('hex') // Additional randomness
+      };
+
+      const token = jwt.sign(uniquePayload, config.JWT_SECRET, {
         expiresIn,
         issuer: 'rssfeeder',
         audience: 'rssfeeder-users'
@@ -27,19 +35,27 @@ class JWTUtils {
       return token;
     } catch (error) {
       logger.error('Error generating access token:', error);
-      throw new Error('Token generation failed');
+      throw new Error('Access token generation failed');
     }
   }
 
   /**
    * Generate refresh token
-   * @param {Object} payload - Token payload (usually user data)
+   * @param {Object} payload - Token payload
    * @param {string} expiresIn - Token expiration time
    * @returns {string} - JWT refresh token
    */
   static generateRefreshToken(payload, expiresIn = config.JWT_REFRESH_EXPIRES_IN) {
     try {
-      const token = jwt.sign(payload, config.JWT_SECRET, {
+      // Add unique identifier and precise timestamp to ensure uniqueness
+      const uniquePayload = {
+        ...payload,
+        jti: crypto.randomUUID(), // Unique JWT ID
+        iat: Math.floor(Date.now() / 1000), // Issued at (seconds)
+        nonce: crypto.randomBytes(8).toString('hex') // Additional randomness
+      };
+
+      const token = jwt.sign(uniquePayload, config.JWT_SECRET, {
         expiresIn,
         issuer: 'rssfeeder',
         audience: 'rssfeeder-refresh'
@@ -156,7 +172,8 @@ class JWTUtils {
       return null;
     }
 
-    const parts = authHeader.split(' ');
+    // Split on spaces and filter out empty parts to handle extra spaces
+    const parts = authHeader.trim().split(/\s+/);
     if (parts.length !== 2 || parts[0] !== 'Bearer') {
       return null;
     }
@@ -292,13 +309,12 @@ class JWTUtils {
         return false;
       }
 
-      // Each part should be base64url encoded
-      try {
-        for (const part of parts) {
-          Buffer.from(part, 'base64url');
+      // Each part should be valid base64url encoded (no +, /, or = padding)
+      const base64urlRegex = /^[A-Za-z0-9_-]+$/;
+      for (const part of parts) {
+        if (!part || !base64urlRegex.test(part)) {
+          return false;
         }
-      } catch (error) {
-        return false;
       }
 
       return true;

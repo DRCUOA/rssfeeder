@@ -114,7 +114,7 @@ const errorHandler = (err, req, res, next) => {
       code,
       message,
       ...(errors.length > 0 && { errors }),
-      ...(config.NODE_ENV === 'development' && { stack: err.stack })
+      ...(process.env.NODE_ENV === 'development' && { stack: err.stack })
     }
   };
 

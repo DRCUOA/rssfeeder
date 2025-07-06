@@ -1,5 +1,6 @@
 const express = require('express');
 const User = require('../models/User');
+const Session = require('../models/Session');
 const JWTUtils = require('../utils/jwt');
 const AuthMiddleware = require('../middlewares/auth');
 const { ValidationMiddleware } = require('../utils/validation');
@@ -29,8 +30,18 @@ router.post('/register',
       // Create user
       const user = await User.create(req.validatedData);
       
-      // Generate tokens
-      const tokens = JWTUtils.generateTokenPair(user);
+      // Create session
+      const sessionData = {
+        user_id: user.id,
+        device_info: req.body.device_info || 'Unknown Device',
+        ip_address: req.ip || req.connection.remoteAddress || 'Unknown IP',
+        user_agent: req.get('User-Agent') || 'Unknown User Agent'
+      };
+      
+      const session = await Session.create(sessionData);
+      
+      // Generate tokens with session information
+      const tokens = JWTUtils.generateTokenPair(user, session.id);
       
       // Send welcome email (don't fail registration if email fails)
       try {
@@ -49,7 +60,12 @@ router.post('/register',
         message: 'User registered successfully',
         data: {
           user: user.getPublicProfile(),
-          auth: tokens
+          auth: tokens,
+          session: {
+            id: session.id,
+            device_info: session.device_info,
+            expires_at: session.expires_at
+          }
         }
       });
     } catch (error) {
@@ -88,11 +104,51 @@ router.post('/login',
     try {
       const start = Date.now();
       
-      // Authenticate user
+      // Authenticate user with username/password
       const user = await User.authenticate(req.validatedData.email, req.validatedData.password);
       
-      // Generate tokens
-      const tokens = JWTUtils.generateTokenPair(user);
+      // Check if 2FA is enabled
+      if (user.twofa_enabled) {
+        const { twofa_token } = req.body;
+        
+        if (!twofa_token) {
+          // 2FA is required but not provided
+          return res.status(200).json({
+            success: false,
+            requires_2fa: true,
+            message: '2FA token is required',
+            data: {
+              user_id: user.id,
+              email: user.email
+            }
+          });
+        }
+        
+        // Verify 2FA token
+        const isValid2FA = await user.verify2FA(twofa_token);
+        if (!isValid2FA) {
+          return res.status(401).json({
+            success: false,
+            error: {
+              code: 'INVALID_2FA_TOKEN',
+              message: 'Invalid 2FA token'
+            }
+          });
+        }
+      }
+      
+      // Create session
+      const sessionData = {
+        user_id: user.id,
+        device_info: req.body.device_info || 'Unknown Device',
+        ip_address: req.ip || req.connection.remoteAddress || 'Unknown IP',
+        user_agent: req.get('User-Agent') || 'Unknown User Agent'
+      };
+      
+      const session = await Session.create(sessionData);
+      
+      // Generate tokens with session information
+      const tokens = JWTUtils.generateTokenPair(user, session.id);
       
       const duration = Date.now() - start;
       logger.info(`User logged in successfully: ${user.email} (${duration}ms)`);
@@ -102,7 +158,12 @@ router.post('/login',
         message: 'Login successful',
         data: {
           user: user.getPublicProfile(),
-          auth: tokens
+          auth: tokens,
+          session: {
+            id: session.id,
+            device_info: session.device_info,
+            expires_at: session.expires_at
+          }
         }
       });
     } catch (error) {

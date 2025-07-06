@@ -1,5 +1,7 @@
 const bcrypt = require('bcryptjs');
 const crypto = require('crypto');
+const speakeasy = require('speakeasy');
+const QRCode = require('qrcode');
 const { db } = require('../db/database');
 const { ValidationError, AuthenticationError } = require('../middlewares/errorHandler');
 const { logger } = require('../utils/logger');
@@ -28,6 +30,11 @@ class User {
     this.last_login = data.last_login;
     this.login_attempts = data.login_attempts;
     this.locked_until = data.locked_until;
+    this.twofa_secret = data.twofa_secret;
+    this.twofa_enabled = data.twofa_enabled;
+    this.twofa_backup_codes = data.twofa_backup_codes;
+    this.google_id = data.google_id;
+    this.email_verified = data.email_verified;
     this.created_at = data.created_at;
     this.updated_at = data.updated_at;
   }
@@ -445,6 +452,7 @@ class User {
       email_notifications: this.email_notifications,
       new_feed_alerts: this.new_feed_alerts,
       data_collection: this.data_collection,
+      twofa_enabled: this.twofa_enabled || false,
       last_login: this.last_login,
       created_at: this.created_at,
       updated_at: this.updated_at
@@ -504,6 +512,152 @@ class User {
         throw error;
       }
       throw new Error('User deletion failed');
+    }
+  }
+
+  /**
+   * Generate 2FA secret and QR code
+   * @returns {Promise<Object>} - Secret and QR code
+   */
+  async generate2FASecret() {
+    try {
+      const secret = speakeasy.generateSecret({
+        name: `RSSFeeder (${this.email})`,
+        issuer: 'RSSFeeder',
+        length: 32
+      });
+
+      const qrCode = await QRCode.toDataURL(secret.otpauth_url);
+
+      logger.info(`2FA secret generated for user: ${this.email}`);
+      return {
+        secret: secret.base32,
+        qrCode: qrCode,
+        otpauth_url: secret.otpauth_url
+      };
+    } catch (error) {
+      logger.error('Error generating 2FA secret:', error);
+      throw new Error('2FA secret generation failed');
+    }
+  }
+
+  /**
+   * Enable 2FA
+   * @param {string} token - TOTP token to verify
+   * @param {string} secret - 2FA secret
+   * @returns {Promise<boolean>} - Success status
+   */
+  async enable2FA(token, secret) {
+    try {
+      // Verify the token before enabling
+      const verified = speakeasy.totp.verify({
+        secret: secret,
+        encoding: 'base32',
+        token: token,
+        window: 1 // Allow 1 time step variance
+      });
+
+      if (!verified) {
+        throw new ValidationError('Invalid 2FA token');
+      }
+
+      // Generate backup codes
+      const backupCodes = [];
+      for (let i = 0; i < 10; i++) {
+        backupCodes.push(crypto.randomBytes(4).toString('hex').toUpperCase());
+      }
+
+      // Save 2FA settings
+      await db('User').where('id', this.id).update({
+        twofa_secret: secret,
+        twofa_enabled: true,
+        twofa_backup_codes: JSON.stringify(backupCodes),
+        updated_at: new Date().toISOString()
+      });
+
+      this.twofa_secret = secret;
+      this.twofa_enabled = true;
+      this.twofa_backup_codes = JSON.stringify(backupCodes);
+
+      logger.info(`2FA enabled for user: ${this.email}`);
+      return backupCodes;
+    } catch (error) {
+      logger.error('Error enabling 2FA:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Disable 2FA
+   * @returns {Promise<boolean>} - Success status
+   */
+  async disable2FA() {
+    try {
+      await db('User').where('id', this.id).update({
+        twofa_secret: null,
+        twofa_enabled: false,
+        twofa_backup_codes: null,
+        updated_at: new Date().toISOString()
+      });
+
+      this.twofa_secret = null;
+      this.twofa_enabled = false;
+      this.twofa_backup_codes = null;
+
+      logger.info(`2FA disabled for user: ${this.email}`);
+      return true;
+    } catch (error) {
+      logger.error('Error disabling 2FA:', error);
+      throw new Error('2FA disable failed');
+    }
+  }
+
+  /**
+   * Verify 2FA token
+   * @param {string} token - TOTP token or backup code
+   * @returns {Promise<boolean>} - Verification result
+   */
+  async verify2FA(token) {
+    try {
+      if (!this.twofa_enabled || !this.twofa_secret) {
+        throw new ValidationError('2FA is not enabled');
+      }
+
+      // First try TOTP verification
+      const verified = speakeasy.totp.verify({
+        secret: this.twofa_secret,
+        encoding: 'base32',
+        token: token,
+        window: 1
+      });
+
+      if (verified) {
+        return true;
+      }
+
+      // Try backup code verification
+      if (this.twofa_backup_codes) {
+        const backupCodes = JSON.parse(this.twofa_backup_codes);
+        const tokenUpper = token.toUpperCase();
+        
+        if (backupCodes.includes(tokenUpper)) {
+          // Remove used backup code
+          const updatedCodes = backupCodes.filter(code => code !== tokenUpper);
+          await db('User').where('id', this.id).update({
+            twofa_backup_codes: JSON.stringify(updatedCodes),
+            updated_at: new Date().toISOString()
+          });
+          
+          this.twofa_backup_codes = JSON.stringify(updatedCodes);
+          logger.info(`Backup code used for 2FA verification: ${this.email}`);
+          return true;
+        }
+      }
+
+      return false;
+    } catch (error) {
+      logger.error('Error verifying 2FA:', error);
+      throw error;
     }
   }
 }

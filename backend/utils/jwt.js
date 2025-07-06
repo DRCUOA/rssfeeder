@@ -56,9 +56,10 @@ class JWTUtils {
   /**
    * Generate both access and refresh tokens
    * @param {Object} user - User object
+   * @param {string} sessionId - Optional session ID to include in tokens
    * @returns {Object} - Object containing both tokens
    */
-  static generateTokenPair(user) {
+  static generateTokenPair(user, sessionId = null) {
     try {
       const payload = {
         id: user.id,
@@ -66,10 +67,15 @@ class JWTUtils {
         name: user.name
       };
 
+      // Add session ID if provided
+      if (sessionId) {
+        payload.sessionId = sessionId;
+      }
+
       const accessToken = this.generateAccessToken(payload);
       const refreshToken = this.generateRefreshToken(payload);
 
-      logger.info('Token pair generated successfully', { userId: user.id });
+      logger.info('Token pair generated successfully', { userId: user.id, sessionId });
       
       return {
         accessToken,

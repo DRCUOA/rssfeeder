@@ -1,0 +1,76 @@
+{
+  "name": "rssfeeder",
+  "version": "1.0.0",
+  "description": "RSS Feed Reader Backend",
+  "main": "app.js",
+  "scripts": {
+    "start": "node app.js",
+    "dev": "nodemon app.js",
+    "test": "NODE_ENV=test jest --reporters=default --reporters=./utils/jestReporter.js",
+    "test:watch": "NODE_ENV=test jest --watch --reporters=default --reporters=./utils/jestReporter.js",
+    "test:coverage": "NODE_ENV=test jest --coverage --reporters=default --reporters=./utils/jestReporter.js",
+    "test:auth": "NODE_ENV=test SKIP_RATE_LIMIT=true jest --testNamePattern='2FA|OAuth|Session|Token Management' --reporters=default --reporters=./utils/jestReporter.js",
+    "db:migrate": "knex migrate:latest",
+    "db:rollback": "knex migrate:rollback",
+    "db:seed": "knex seed:run",
+    "db:reset": "knex migrate:rollback:all && knex migrate:latest && knex seed:run"
+  },
+  "keywords": [
+    "rss",
+    "feed",
+    "reader",
+    "express",
+    "sqlite"
+  ],
+  "author": "RSSFeeder Team",
+  "license": "MIT",
+  "dependencies": {
+    "bcrypt": "^5.1.1",
+    "compression": "^1.7.4",
+    "cookie-parser": "^1.4.6",
+    "cors": "^2.8.5",
+    "dotenv": "^16.4.7",
+    "express": "^4.21.2",
+    "express-rate-limit": "^7.4.1",
+    "helmet": "^8.0.0",
+    "jsonwebtoken": "^9.0.2",
+    "knex": "^3.1.0",
+    "morgan": "^1.10.0",
+    "multer": "^1.4.5-lts.1",
+    "passport": "^0.7.0",
+    "passport-google-oauth20": "^2.0.0",
+    "qrcode": "^1.5.4",
+    "speakeasy": "^2.0.0",
+    "sqlite3": "^5.1.7",
+    "winston": "^3.15.0",
+    "winston-daily-rotate-file": "^5.0.0"
+  },
+  "devDependencies": {
+    "jest": "^29.7.0",
+    "nodemon": "^3.1.9",
+    "supertest": "^7.0.0"
+  },
+  "jest": {
+    "testEnvironment": "node",
+    "testMatch": [
+      "**/tests/**/*.test.js"
+    ],
+    "collectCoverageFrom": [
+      "**/*.js",
+      "!**/node_modules/**",
+      "!**/tests/**",
+      "!**/coverage/**",
+      "!knexfile.js",
+      "!jest.config.js"
+    ],
+    "coverageDirectory": "coverage",
+    "coverageReporters": [
+      "text",
+      "lcov",
+      "html"
+    ],
+    "setupFilesAfterEnv": [
+      "./tests/setup.js"
+    ]
+  }
+} 

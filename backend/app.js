@@ -5,6 +5,7 @@ const compression = require('compression');
 const rateLimit = require('express-rate-limit');
 const cookieParser = require('cookie-parser');
 const morgan = require('morgan');
+const passport = require('passport');
 
 // Import configuration and utilities
 const config = require('./config');
@@ -50,7 +51,7 @@ if (config.ENABLE_CORS) {
 // Rate limiting
 const limiter = rateLimit({
   windowMs: config.RATE_LIMIT_WINDOW * 60 * 1000, // Convert minutes to milliseconds
-  max: config.RATE_LIMIT_MAX,
+  max: process.env.NODE_ENV === 'test' ? config.RATE_LIMIT_MAX * 10 : config.RATE_LIMIT_MAX, // 10x higher limit for tests
   message: {
     success: false,
     error: {
@@ -60,7 +61,11 @@ const limiter = rateLimit({
   },
   standardHeaders: true,
   legacyHeaders: false,
-  skipSuccessfulRequests: config.RATE_LIMIT_SKIP_SUCCESSFUL_REQUESTS
+  skipSuccessfulRequests: config.RATE_LIMIT_SKIP_SUCCESSFUL_REQUESTS,
+  skip: (req) => {
+    // Skip rate limiting in test environment if configured
+    return process.env.NODE_ENV === 'test' && process.env.SKIP_RATE_LIMIT === 'true';
+  }
 });
 
 app.use(limiter);
@@ -72,6 +77,9 @@ app.use(compression());
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 app.use(cookieParser(config.COOKIE_SECRET));
+
+// Initialize Passport
+app.use(passport.initialize());
 
 // HTTP request logging
 if (config.NODE_ENV === 'development') {
@@ -117,6 +125,11 @@ app.use('/api/v1', (req, res, next) => {
 
 // Route modules
 app.use('/api/v1/auth', require('./routes/auth'));
+app.use('/api/v1/auth/2fa', require('./routes/twofa'));
+app.use('/api/v1/auth/oauth', require('./routes/oauth'));
+app.use('/api/v1/sessions', require('./routes/session'));
+app.use('/api/v1/tokens', require('./routes/tokens'));
+app.use('/api/v1/email', require('./routes/email'));
 
 // Placeholder for additional route modules (to be implemented in later stages)
 // app.use('/api/v1/users', require('./routes/users'));

@@ -59,6 +59,11 @@ const config = {
   SMTP_PASS: process.env.SMTP_PASS || '',
   SMTP_FROM: process.env.SMTP_FROM || 'RSSFeeder <noreply@rssfeeder.com>',
 
+  // OAuth
+  GOOGLE_CLIENT_ID: process.env.GOOGLE_CLIENT_ID || '',
+  GOOGLE_CLIENT_SECRET: process.env.GOOGLE_CLIENT_SECRET || '',
+  OAUTH_CALLBACK_URL: process.env.OAUTH_CALLBACK_URL || 'http://localhost:3000/api/v1/auth/oauth/google/callback',
+
   // Cache
   CACHE_TTL: parseInt(process.env.CACHE_TTL) || 300,
   CACHE_MAX_SIZE: parseInt(process.env.CACHE_MAX_SIZE) || 1000,

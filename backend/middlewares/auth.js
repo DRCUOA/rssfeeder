@@ -1,5 +1,6 @@
 const JWTUtils = require('../utils/jwt');
 const User = require('../models/User');
+const Session = require('../models/Session');
 const { AuthenticationError, AuthorizationError } = require('./errorHandler');
 const { logger } = require('../utils/logger');
 
@@ -43,6 +44,23 @@ class AuthMiddleware {
       // Check if user account is locked
       if (user.isLocked()) {
         throw new AuthenticationError('Account is temporarily locked');
+      }
+
+      // Check if there's a session token in the payload
+      if (decoded.sessionId) {
+        // Validate session
+        const session = await Session.findById(decoded.sessionId);
+        if (!session || !session.isValid() || session.user_id !== user.id) {
+          throw new AuthenticationError('Invalid session');
+        }
+        
+        // Update session activity
+        await Session.updateActivity(decoded.sessionId);
+        
+        // Attach session info to request
+        req.session = session;
+        req.sessionId = decoded.sessionId;
+        req.sessionToken = session.session_token;
       }
 
       // Attach user to request
@@ -242,10 +260,21 @@ class AuthMiddleware {
    * @returns {Function} - Express middleware function
    */
   static authRateLimit(maxAttempts = 5, windowMs = 15 * 60 * 1000) {
+    // More lenient limits for test environment
+    if (process.env.NODE_ENV === 'test') {
+      maxAttempts = maxAttempts * 10; // 50 attempts instead of 5
+      windowMs = Math.min(windowMs, 60 * 1000); // Max 1 minute window
+    }
+    
     const attempts = new Map();
     
     return (req, res, next) => {
       try {
+        // Skip rate limiting in test environment if configured
+        if (process.env.NODE_ENV === 'test' && process.env.SKIP_RATE_LIMIT === 'true') {
+          return next();
+        }
+        
         const clientId = req.ip || req.connection.remoteAddress;
         const now = Date.now();
         
@@ -345,7 +374,7 @@ class AuthMiddleware {
   }
 
   /**
-   * Logout middleware - invalidates token (adds to blacklist)
+   * Logout middleware - invalidates token and session
    * @param {Object} req - Express request object
    * @param {Object} res - Express response object
    * @param {Function} next - Express next function
@@ -356,11 +385,18 @@ class AuthMiddleware {
         // Create blacklist entry
         const blacklistEntry = JWTUtils.createBlacklistEntry(req.token);
         
+        // Deactivate session if it exists
+        if (req.sessionId) {
+          await Session.deactivate(req.sessionId);
+          logger.info(`Session ${req.sessionId} deactivated during logout`);
+        }
+        
         // In a real implementation, you'd store this in a database or Redis
         // For now, we'll just log it
         logger.info('User logged out', { 
           userId: req.user?.id,
-          tokenId: blacklistEntry.jti 
+          tokenId: blacklistEntry.jti,
+          sessionId: req.sessionId 
         });
       }
       
